@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllSlugs, getCompany, getUpdates, STATUS_LABEL, longDate, money } from "@/lib/companies";
+import { getCompany, getUpdates, STATUS_LABEL, longDate, money } from "@/lib/companies";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ slug: string }> };
-
-export async function generateStaticParams() {
-  const rows = await getAllSlugs();
-  return rows.map((r) => ({ slug: r.slug }));
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

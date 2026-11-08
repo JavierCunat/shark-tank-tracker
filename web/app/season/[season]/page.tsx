@@ -1,16 +1,11 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getCompaniesBySeason, getSeasons, longDate } from "@/lib/companies";
+import { getCompaniesBySeason, longDate } from "@/lib/companies";
 import { CompanyGrid } from "@/app/company-grid";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 type Props = { params: Promise<{ season: string }> };
-
-export async function generateStaticParams() {
-  const seasons = await getSeasons();
-  return seasons.map((s) => ({ season: String(s.season) }));
-}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { season } = await params;

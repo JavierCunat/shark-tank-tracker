@@ -2,7 +2,7 @@ import Link from "next/link";
 import { getAllCompanies, getSeasons, STATUS_LABEL } from "@/lib/companies";
 import { CompanyGrid } from "./company-grid";
 
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function Home() {
   const [companies, seasons] = await Promise.all([getAllCompanies(), getSeasons()]);

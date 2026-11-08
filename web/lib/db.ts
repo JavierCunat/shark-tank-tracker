@@ -8,7 +8,9 @@ export const pool =
   globalForPg.pgPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 5,
+    max: 3,
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 8000,
   });
 
 if (process.env.NODE_ENV !== "production") globalForPg.pgPool = pool;
