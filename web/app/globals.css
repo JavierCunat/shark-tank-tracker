@@ -1,0 +1,48 @@
+:root {
+  --bg: #fbfaf7;
+  --fg: #1a1a1a;
+  --muted: #6b6b6b;
+  --line: #e6e3dc;
+  --accent: #0b5fa5;
+  --card: #ffffff;
+  --badge-active: #1b7f3b;
+  --badge-closed: #a12d2d;
+  --badge-acquired: #7a4ea3;
+  --badge-unknown: #8a8a8a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.55 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+main { max-width: 960px; margin: 0 auto; padding: 24px 16px 64px; }
+header.site { border-bottom: 1px solid var(--line); background: var(--card); }
+header.site .inner { max-width: 960px; margin: 0 auto; padding: 12px 16px; display: flex; gap: 24px; align-items: center; }
+header.site .brand { display: flex; align-items: center; gap: 10px; color: var(--fg); }
+header.site .brand img { height: 40px; width: auto; display: block; }
+header.site .brand-sub { font-weight: 600; font-size: 15px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header.site .brand:hover { text-decoration: none; }
+header.site nav a { color: var(--muted); margin-right: 14px; }
+h1 { font-size: 30px; line-height: 1.2; margin: 8px 0 12px; letter-spacing: -0.01em; }
+h2 { font-size: 20px; margin: 32px 0 12px; }
+p.lede { font-size: 18px; color: #333; margin: 0 0 20px; }
+.muted { color: var(--muted); }
+.grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.card .name { font-weight: 600; font-size: 17px; color: var(--fg); }
+.card .meta { font-size: 13px; color: var(--muted); }
+.badge { display: inline-block; font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 999px; color: #fff; background: var(--badge-unknown); width: fit-content; }
+.badge.active, .badge.deal_closed { background: var(--badge-active); }
+.badge.closed, .badge.deal_fell_through { background: var(--badge-closed); }
+.badge.acquired { background: var(--badge-acquired); }
+dl.facts { display: grid; grid-template-columns: max-content 1fr; gap: 6px 18px; margin: 16px 0; padding: 14px 16px; background: var(--card); border: 1px solid var(--line); border-radius: 10px; }
+dl.facts dt { color: var(--muted); } dl.facts dd { margin: 0; }
+ol.timeline { list-style: none; padding: 0; margin: 0; border-left: 2px solid var(--line); }
+ol.timeline li { position: relative; padding: 0 0 18px 20px; }
+ol.timeline li::before { content: ""; position: absolute; left: -7px; top: 6px; width: 12px; height: 12px; border-radius: 50%; background: var(--accent); }
+ol.timeline time { font-size: 13px; color: var(--muted); display: block; }
+.season-row { display: flex; justify-content: space-between; padding: 12px 0; border-bottom: 1px solid var(--line); }
+main footer { margin-top: 48px; font-size: 13px; color: var(--muted); }
+footer.site { border-top: 1px solid var(--line); margin-top: 32px; font-size: 13px; color: var(--muted); }
+footer.site .inner { max-width: 960px; margin: 0 auto; padding: 18px 16px; }
+@media (max-width: 600px) { h1 { font-size: 24px; } }

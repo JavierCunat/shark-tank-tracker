@@ -1,4 +1,4 @@
-"""Builds seed/season1.csv from the Season 1 episode data (source: Wikipedia, Shark Tank season 1).
+"""Builds seed/season1.csv from the Season 1 episode data.
 
 Run:  python seed/build_season1.py
 """
