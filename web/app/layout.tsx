@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { SearchBox } from "./search-box";
 
 // Fallback for non-Apple devices; Apple devices render San Francisco via the system font stack.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
@@ -30,6 +31,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <Link href="/season/1">Seasons</Link>
               <Link href="/contribute">Contribute</Link>
             </nav>
+            <div className="spacer" />
+            <SearchBox compact />
           </div>
         </header>
         <main>{children}</main>

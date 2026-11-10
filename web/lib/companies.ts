@@ -52,6 +52,19 @@ export function getFeaturedCompanies() {
   );
 }
 
+export function searchCompanies(q: string) {
+  // Prefix/word match on name or description. Postgres handles this fine at a few thousand rows;
+  // swap for pg_trgm similarity if it ever gets slow or needs typo tolerance.
+  const pattern = `%${q.trim().replace(/[%_]/g, "\\$&")}%`;
+  return query<CompanyCard>(
+    `select * from company_cards
+      where name ilike $1 or description ilike $1 or array_to_string(deal_sharks, ' ') ilike $1
+      order by (name ilike $1) desc, season, episode_in_season, name
+      limit 60`,
+    [pattern],
+  );
+}
+
 export function getCompanyOptions() {
   return query<{ slug: string; name: string; season: number }>(
     `select slug, name, season from company_cards order by season, name`,
@@ -101,5 +114,7 @@ export function getAllSlugs() {
 export const money = (n: number | null) =>
   n == null ? null : n.toLocaleString("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 });
 
-export const longDate = (d: string) =>
-  new Date(d + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+export const longDate = (d: string | Date) => {
+  const iso = d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
+  return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+};

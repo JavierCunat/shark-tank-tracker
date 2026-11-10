@@ -22,7 +22,6 @@ export default async function SeasonPage({ params }: Props) {
   const companies = await getCompaniesBySeason(seasonNum);
   if (companies.length === 0) notFound();
 
-  const deals = companies.filter((c) => c.deal_on_air).length;
   const first = companies[0].air_date;
   const last = companies[companies.length - 1].air_date;
 
@@ -32,11 +31,13 @@ export default async function SeasonPage({ params }: Props) {
 
   return (
     <>
-      <h1>Shark Tank Season {seasonNum}: every company and where they are now</h1>
-      <p className="lede">
-        {companies.length} businesses pitched across {byEpisode.size} episodes, airing {longDate(first)} to {longDate(last)}.
-        {" "}{deals} walked away with an on-air deal.
-      </p>
+      <section className="hero">
+        <p className="eyebrow">Season {seasonNum}</p>
+        <h1>Every company and where they are now</h1>
+        <p className="lede">
+          {companies.length} businesses across {byEpisode.size} episodes, {longDate(first)} to {longDate(last)}.
+        </p>
+      </section>
       {[...byEpisode.entries()].map(([ep, list]) => (
         <section key={ep}>
           <h2 id={`episode-${ep}`}>Episode {ep} <span className="muted">· {longDate(list[0].air_date)}</span></h2>

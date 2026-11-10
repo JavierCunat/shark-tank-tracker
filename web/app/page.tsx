@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { getFeaturedCompanies, getSeasons } from "@/lib/companies";
 import { CompanyGrid } from "./company-grid";
+import { SearchBox } from "./search-box";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export default async function Home() {
         {total} companies across {seasons.length} season{seasons.length === 1 ? "" : "s"}, each with a sourced timeline of
         what came after the pitch. Browse by season, or <Link href="/contribute">tell us what you know</Link>.
       </p>
+      <SearchBox />
 
       <h2>Seasons</h2>
       {seasons.map((s) => (

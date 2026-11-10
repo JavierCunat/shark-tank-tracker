@@ -2,6 +2,10 @@
 // so we stash the pool on globalThis to avoid opening a new pool on every reload.
 import pg from "pg";
 
+// Return DATE columns as plain "YYYY-MM-DD" strings instead of JS Date objects (which
+// would be shifted by the server timezone and break our date formatting).
+pg.types.setTypeParser(1082, (v) => v);
+
 const globalForPg = globalThis as unknown as { pgPool?: pg.Pool };
 
 export const pool =
