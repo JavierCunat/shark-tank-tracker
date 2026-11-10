@@ -12,7 +12,9 @@ export const pool =
   globalForPg.pgPool ??
   new pg.Pool({
     connectionString: process.env.DATABASE_URL,
-    max: 3,
+    max: 2,
+    idleTimeoutMillis: 5000,      // release idle connections fast; serverless instances come and go
+    allowExitOnIdle: true,
     ssl: { rejectUnauthorized: false },
     connectionTimeoutMillis: 8000,
   });
