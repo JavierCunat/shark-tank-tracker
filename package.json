@@ -4,7 +4,11 @@
   "type": "module",
   "scripts": {
     "seed": "tsx scripts/load-seed.ts seed/season1.csv",
-    "find-updates": "tsx scripts/find-updates.ts"
+    "find-updates": "tsx scripts/find-updates.ts",
+    "add-update": "tsx scripts/add-update.ts",
+    "unverified": "tsx scripts/list-unverified.ts",
+    "review": "tsx scripts/review.ts",
+    "feature": "tsx scripts/feature.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

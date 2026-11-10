@@ -1,0 +1,28 @@
+name: Find company updates
+
+on:
+  schedule:
+    - cron: "17 9 * * *"   # daily, 09:17 UTC (~1:17am Pacific)
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: "How many companies to check this run"
+        default: "50"
+
+jobs:
+  find-updates:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Search news and queue candidates for review
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
+        run: npx tsx scripts/find-updates.ts --limit ${{ github.event.inputs.limit || '50' }}

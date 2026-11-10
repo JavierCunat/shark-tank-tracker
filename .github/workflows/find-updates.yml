@@ -7,7 +7,7 @@ on:
     inputs:
       limit:
         description: "How many companies to check this run"
-        default: "50"
+        default: "10"
 
 jobs:
   find-updates:
@@ -24,5 +24,4 @@ jobs:
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
-          NEWS_API_KEY: ${{ secrets.NEWS_API_KEY }}
-        run: npx tsx scripts/find-updates.ts --limit ${{ github.event.inputs.limit || '50' }}
+        run: npx tsx scripts/find-updates.ts --limit ${{ github.event.inputs.limit || '10' }}

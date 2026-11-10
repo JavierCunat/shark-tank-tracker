@@ -1,7 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
+import { Inter } from "next/font/google";
 import "./globals.css";
+
+// Fallback for non-Apple devices; Apple devices render San Francisco via the system font stack.
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
 const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
 
@@ -14,7 +18,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" className={inter.variable}>
       <body>
         <header className="site">
           <div className="inner">
@@ -24,6 +28,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav>
               <Link href="/season/1">Seasons</Link>
+              <Link href="/contribute">Contribute</Link>
             </nav>
           </div>
         </header>

@@ -44,6 +44,20 @@ export function getAllCompanies() {
   );
 }
 
+export function getFeaturedCompanies() {
+  return query<CompanyCard>(
+    `select cc.* from company_cards cc join companies c on c.id = cc.id
+      where c.featured_rank is not null
+      order by c.featured_rank, cc.name`,
+  );
+}
+
+export function getCompanyOptions() {
+  return query<{ slug: string; name: string; season: number }>(
+    `select slug, name, season from company_cards order by season, name`,
+  );
+}
+
 export function getCompaniesBySeason(season: number) {
   return query<CompanyCard>(
     `select * from company_cards where season = $1 order by episode_in_season, name`,

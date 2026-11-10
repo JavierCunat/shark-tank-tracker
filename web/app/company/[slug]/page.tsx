@@ -99,7 +99,7 @@ export default async function CompanyPage({ params }: Props) {
       </ol>
 
       <footer>
-        Know something we don't? Updates need a source link. Submission form coming soon.
+        Know something we don&apos;t? <Link href={`/contribute?company=${c.slug}`}>Send an update</Link> — it needs a source link.
       </footer>
     </>
   );
