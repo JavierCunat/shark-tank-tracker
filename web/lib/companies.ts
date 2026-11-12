@@ -1,4 +1,5 @@
 import { query } from "./db";
+export { query };
 
 export type CompanyStatus = "unknown" | "active" | "acquired" | "closed" | "deal_closed" | "deal_fell_through";
 

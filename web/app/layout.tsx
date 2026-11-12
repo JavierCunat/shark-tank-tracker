@@ -29,6 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </Link>
             <nav>
               <Link href="/season/1">Seasons</Link>
+              <Link href="/sharks">Sharks</Link>
               <Link href="/contribute">Contribute</Link>
             </nav>
             <div className="spacer" />
