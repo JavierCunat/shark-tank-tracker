@@ -15,7 +15,6 @@ export default async function Home() {
     <>
       <ImageStreamHero images={heroImages} className="home-hero" cards={9} speed={20} axis={56}>
         <div className="home-hero-content">
-          <p className="eyebrow">After the pitch</p>
           <h1>What happened to every Shark Tank company?</h1>
           <p className="lede">
             {total} companies across {seasons.length} season{seasons.length === 1 ? "" : "s"}, each with a sourced timeline

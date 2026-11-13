@@ -17,7 +17,9 @@ RAMP = " .:-=+*#%@"  # dark -> light (we render light text on dark, so bright pi
 
 def to_ascii(path: Path) -> str:
     img = Image.open(path)
-    img = ImageOps.exif_transpose(img).convert("L")
+    img = ImageOps.exif_transpose(img).convert("RGBA")
+    # flatten transparency onto black, then grayscale
+    bg = Image.new("RGBA", img.size, (0, 0, 0, 255)); bg.alpha_composite(img); img = bg.convert("L")
     # crop to 4:5 portrait, centered on the top third (faces usually sit high)
     w, h = img.size
     target = 4 / 5
@@ -26,6 +28,16 @@ def to_ascii(path: Path) -> str:
     else:
         nh = int(w / target); img = img.crop((0, 0, w, nh))
     img = ImageOps.autocontrast(img, cutoff=2)
+    # light background? sample the border; if it's bright, invert so the background goes quiet
+    w, h = img.size; px = img.load()
+    border = [px[x, y] for x in range(0, w, max(1, w // 40)) for y in (0, h - 1)] + [px[x, y] for y in range(0, h, max(1, h // 40)) for x in (0, w - 1)]
+    if sum(border) / len(border) > 128:
+        img = ImageOps.invert(img)
+        px = img.load()
+        border = [255 - b for b in border]
+    # treat the background's brightness as black so flat backdrops of any shade go quiet
+    level = min(200, int(sum(border) / len(border)) + 18)
+    img = img.point(lambda v: 0 if v <= level else int((v - level) * 255 / (255 - level)))
     rows = int(COLS / target * ASPECT)
     img = img.resize((COLS, rows), Image.LANCZOS)
     px = img.load()

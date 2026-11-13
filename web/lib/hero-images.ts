@@ -1,7 +1,7 @@
 import { readdirSync } from "node:fs";
 import path from "node:path";
 import type { StreamImage } from "@/components/image-stream-hero";
-import { getFeaturedCompanies, getAllCompanies } from "./companies";
+import { SPOTLIGHT } from "./spotlight";
 
 /* Images for the home hero.
  * 1. Any files in public/hero/ (jpg/png/webp), sorted by name. Drop product photos there.
@@ -35,17 +35,12 @@ ${text}
 }
 
 export async function getHeroImages(): Promise<StreamImage[]> {
-  try {
-    const dir = path.join(process.cwd(), "public", "hero");
-    const files = readdirSync(dir).filter((f) => /\.(jpe?g|png|webp)$/i.test(f)).sort();
-    if (files.length) return files.map((f) => ({ src: `/hero/${f}`, alt: "" }));
-  } catch { /* no folder yet */ }
-
-  let list = await getFeaturedCompanies();
-  if (list.length < 6) {
-    const all = await getAllCompanies();
-    const deals = all.filter((c) => c.deal_on_air && !list.some((f) => f.id === c.id));
-    list = [...list, ...deals].slice(0, 10);
-  }
-  return list.map((c, i) => ({ src: tile(c.name, `Season ${c.season} · Episode ${c.episode_in_season}`, i), alt: c.name }));
+  // Per-company image if one exists in public/hero/, otherwise a generated tile.
+  let files = new Set<string>();
+  try { files = new Set(readdirSync(path.join(process.cwd(), "public", "hero"))); } catch { /* no folder yet */ }
+  const find = (slug: string) => ["jpg", "jpeg", "png", "webp"].map((e) => `${slug}.${e}`).find((f) => files.has(f));
+  return SPOTLIGHT.map((c, i) => {
+    const f = find(c.slug);
+    return f ? { src: `/hero/${f}`, alt: c.name } : { src: tile(c.name, c.blurb, i), alt: c.name };
+  });
 }

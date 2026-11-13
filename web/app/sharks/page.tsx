@@ -5,6 +5,16 @@ import { money } from "@/lib/companies";
 import { Marquee } from "@/components/marquee";
 import { OceanBackground } from "@/components/ocean-background";
 import ascii from "@/lib/shark-ascii.json";
+import { existsSync } from "node:fs";
+import path from "node:path";
+
+// Real portrait at public/sharks/<slug>.(png|jpg|webp); shown on hover over the ASCII.
+function photoFor(slug: string): string | null {
+  for (const ext of ["png", "jpg", "jpeg", "webp"]) {
+    if (existsSync(path.join(process.cwd(), "public", "sharks", `${slug}.${ext}`))) return `/sharks/${slug}.${ext}`;
+  }
+  return null;
+}
 
 export const dynamic = "force-dynamic";
 
@@ -20,10 +30,11 @@ const initials = (n: string) => n.split(" ").map((w) => w[0]).join("").slice(0, 
 export default async function SharksPage() {
   const stats = await getSharkStats();
   const byName = new Map(stats.map((s) => [s.name, s]));
+  const zero = (name: string) => ({ name, deals: 0, invested: 0, active: 0, closed: 0, unknown: 0 });
   const roster = [
-    ...SHARKS.map((s) => ({ ...s, stats: byName.get(s.name) })),
+    ...SHARKS.map((s) => ({ ...s, stats: byName.get(s.name) ?? zero(s.name) })),
     ...stats.filter((s) => !SHARKS.some((k) => k.name === s.name)).map((s) => ({ slug: sharkSlug(s.name), name: s.name, bio: "", seasons: "Guest", stats: s })),
-  ].filter((s) => s.stats);
+  ];
 
   const totalDeals = stats.reduce((n, s) => n + s.deals, 0);
   const totalInvested = stats.reduce((n, s) => n + s.invested, 0);
@@ -35,13 +46,7 @@ export default async function SharksPage() {
 
       <div className="sharks-inner">
         <header className="sharks-head">
-          <div className="sharks-icon" aria-hidden="true">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M2 14c3-1 5-6 10-6 4 0 6 2 10 2-2 3-5 5-10 5-4 0-6-1-10-1Z" /><path d="M12 8c1-3 2-4 4-5-1 2-1 3 0 5" /><path d="M6 15l-2 4 5-2" />
-            </svg>
-          </div>
           <h1>Meet the Sharks</h1>
-          <p>Every on-air deal they've made, and how those companies are doing today.</p>
         </header>
 
         <div className="sharks-marquee">
@@ -54,10 +59,14 @@ export default async function SharksPage() {
                 <Link href={`/shark/${s.slug}`} className="mcard" key={s.slug}>
                   <div className="mcard-portrait">
                     {ART[s.slug] ? <pre className="shark3d-ascii">{ART[s.slug]}</pre> : <span className="mcard-initials">{initials(s.name)}</span>}
+                    {photoFor(s.slug) && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img className="mcard-photo" src={photoFor(s.slug)!} alt="" loading="lazy" draggable={false} />
+                    )}
                   </div>
                   <div className="mcard-caption">
                     <h3>{s.name}</h3>
-                    <p>{s.seasons} · {st.deals} deals · {going} still going</p>
+                    <p>{s.seasons}{st.deals ? <> · {st.deals} deal{st.deals === 1 ? "" : "s"} · {going} still going</> : " · no deals tracked yet"}</p>
                   </div>
                 </Link>
               );
@@ -70,7 +79,6 @@ export default async function SharksPage() {
             {totalDeals} on-air deals worth {money(totalInvested)} so far
             {top ? <>, with {top.name} the biggest spender at {money(top.invested)}.</> : "."}
           </p>
-          <span className="muted">Figures are the amounts agreed on air; "still going" counts verified companies only.</span>
         </div>
       </div>
     </section>
