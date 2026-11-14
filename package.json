@@ -8,7 +8,9 @@
     "add-update": "tsx scripts/add-update.ts",
     "unverified": "tsx scripts/list-unverified.ts",
     "review": "tsx scripts/review.ts",
-    "feature": "tsx scripts/feature.ts"
+    "feature": "tsx scripts/feature.ts",
+    "seed-season": "tsx scripts/seed-season.ts",
+    "load": "tsx scripts/load-seed.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",

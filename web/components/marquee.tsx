@@ -40,19 +40,27 @@ export function Marquee({ children, duration = 40, gap = 24, pauseOnHover = true
     const idle = () => { resumeAt = performance.now() + 2500; };   // resume 2.5s after the user lets go
     const onEnter = () => { if (pauseOnHover) paused = true; };
     const onLeave = () => { paused = false; dragging = false; el.classList.remove("dragging"); };
+    // Drag starts "armed" on mouse-down and only becomes a real drag after a few pixels of movement.
+    // Grabbing the pointer immediately would steal the click from the card links.
+    let armed = false, pointerId = -1;
     const onDown = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return;   // native touch scrolling handles swipes
-      dragging = true; startX = e.clientX; startLeft = el.scrollLeft; el.classList.add("dragging"); el.setPointerCapture(e.pointerId);
+      if (e.pointerType === "touch" || e.button !== 0) return;   // native touch scrolling handles swipes
+      armed = true; pointerId = e.pointerId; startX = e.clientX; startLeft = el.scrollLeft;
     };
     const onMove = (e: PointerEvent) => {
-      if (!dragging) return;
+      if (!armed && !dragging) return;
+      if (!dragging) {
+        if (Math.abs(e.clientX - startX) < 6) return;
+        dragging = true; armed = false; el.classList.add("dragging"); el.setPointerCapture(pointerId);
+        const stop = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); };
+        el.addEventListener("click", stop, { capture: true, once: true });
+      }
       setLeft(startLeft - (e.clientX - startX)); wrap();
     };
-    const onUp = (e: PointerEvent) => {
+    const onUp = () => {
+      armed = false;
       if (!dragging) return;
       dragging = false; el.classList.remove("dragging"); idle();
-      // swallow the click if it was really a drag
-      if (Math.abs(e.clientX - startX) > 6) { const stop = (ev: Event) => { ev.preventDefault(); ev.stopPropagation(); el.removeEventListener("click", stop, true); }; el.addEventListener("click", stop, true); }
     };
     const onScroll = () => {   // a scroll we didn't cause = the user swiped; adopt it, pause briefly, then resume
       if (dragging) return;

@@ -110,17 +110,29 @@ function normalize(raw: any): Finding {
 }
 
 await db.connect();
-const where = SLUG ? "where c.slug = $2" : "";
-const params: unknown[] = SLUG ? [LIMIT, SLUG] : [LIMIT];
+// Research only companies that need it:
+//  - no candidate already waiting for review
+//  - not researched in the last RESEARCH_DAYS days (whether or not anything was found)
+//  - not human-verified in the last VERIFIED_DAYS days
+// Oldest-researched first, so everything gets a turn eventually. --slug forces one company regardless.
+const RESEARCH_DAYS = Number(process.env.RESEARCH_DAYS ?? 30);
+const VERIFIED_DAYS = Number(process.env.VERIFIED_DAYS ?? 90);
+const where = SLUG
+  ? "where c.slug = $2"
+  : `where not exists (select 1 from update_candidates uc where uc.company_id = c.id and uc.status = 'pending')
+       and (c.last_researched_at is null or c.last_researched_at < now() - ($2 || ' days')::interval)
+       and (c.last_verified_at is null or c.last_verified_at < current_date - ($3 || ' days')::interval)`;
+const params: unknown[] = SLUG ? [LIMIT, SLUG] : [LIMIT, String(RESEARCH_DAYS), String(VERIFIED_DAYS)];
 const { rows: companies } = await db.query<any>(
   `select c.id, c.slug, c.name, c.description, c.deal_on_air, c.deal_sharks, c.deal_amount_usd, c.deal_equity_pct,
           e.season, e.episode_in_season, e.air_date::text
      from companies c join episodes e on e.id = c.episode_id
      ${where}
-    order by c.last_verified_at nulls first, e.air_date, c.name
+    order by c.last_researched_at nulls first, c.last_verified_at nulls first, e.air_date, c.name
     limit $1`,
   params,
 );
+if (companies.length === 0) { console.log("nothing needs research right now (everything is queued, recently researched, or recently verified)"); await db.end(); process.exit(0); }
 
 let queued = 0;
 for (const c of companies) {
@@ -132,10 +144,9 @@ for (const c of companies) {
     console.log(`failed: ${(e as Error).message}`);
     continue;
   }
+  await db.query("update companies set last_researched_at = now() where id = $1", [c.id]);   // stamp the attempt either way
   if (!f.found || !f.status || !f.summary) {
     console.log("nothing reliable found");
-    // record the attempt so this company drops to the back of the queue
-    await db.query("update companies set last_verified_at = coalesce(last_verified_at, '1970-01-01') where id = $1", [c.id]);
     continue;
   }
   const url = f.primary_source_url ?? `research:${new Date().toISOString().slice(0, 10)}`;
