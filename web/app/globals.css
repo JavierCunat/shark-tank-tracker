@@ -318,3 +318,21 @@ ol.notable li { padding: 14px 16px; background: var(--card); border: 1px solid v
 .search.compact .suggest { min-width: 360px; right: auto; }
 .search.compact .suggest-kind { display: none; }
 @media (max-width: 700px) { .search.compact .suggest { min-width: 0; right: 0; } }
+
+/* scroll shark (contribute page) */
+.shark-layer { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+.shark { position: absolute; top: 0; left: 0; width: 420px; will-change: transform; opacity: 0.6;
+  filter: drop-shadow(0 24px 40px rgba(0, 0, 0, 0.55)); }
+.shark svg { display: block; animation: shark-bob 5s ease-in-out infinite; }
+/* body wave: each segment rotates around its joint, a little later and a little more than the one in front */
+.shark-body  { transform-origin: 300px 90px; animation: shark-seg 1.1s ease-in-out infinite; --amp: 1.2deg; }
+.shark-rear  { transform-origin: 212px 92px; animation: shark-seg 1.1s ease-in-out infinite; --amp: 4deg;  animation-delay: -0.12s; }
+.shark-tail  { transform-origin: 76px 91px;  animation: shark-seg 1.1s ease-in-out infinite; --amp: 14deg; animation-delay: -0.24s; }
+.shark-fin   { transform-origin: 318px 112px; animation: shark-seg 2.2s ease-in-out infinite; --amp: 6deg; }
+.shark-light { animation: shark-light 6s linear infinite; }
+@keyframes shark-seg { 0%, 100% { transform: rotate(calc(var(--amp) * -1)); } 50% { transform: rotate(var(--amp)); } }
+@keyframes shark-bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes shark-light { from { transform: translateX(0); } to { transform: translateX(640px); } }
+main > :not(.shark-layer) { position: relative; z-index: 1; }
+@media (prefers-reduced-motion: reduce) { .shark svg, .shark-body, .shark-rear, .shark-tail, .shark-fin, .shark-light { animation: none; } }
+@media (max-width: 600px) { .shark { width: 240px; opacity: 0.45; } }

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCompanyOptions } from "@/lib/companies";
 import { ContributeForm } from "./form";
+import { ScrollShark } from "@/components/scroll-shark";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +16,7 @@ export default async function ContributePage({ searchParams }: { searchParams: P
   const companies = await getCompanyOptions();
   return (
     <>
+      <ScrollShark />
       <h1>Know what happened to one of these companies?</h1>
       <p className="lede">
         Every update on this site is reviewed by a person and linked to a source. Send us what you know and where you
