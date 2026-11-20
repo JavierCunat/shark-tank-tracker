@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
 import Image from "next/image";
 import { Inter } from "next/font/google";
@@ -8,7 +9,7 @@ import { SearchBox } from "./search-box";
 // Fallback for non-Apple devices; Apple devices render San Francisco via the system font stack.
 const inter = Inter({ subsets: ["latin"], variable: "--font-inter", display: "swap" });
 
-const SITE = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+const SITE = SITE_URL;
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE),

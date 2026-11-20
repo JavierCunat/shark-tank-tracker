@@ -1,11 +1,12 @@
 import type { MetadataRoute } from "next";
+import { SITE_URL } from "@/lib/site";
 import { getAllSlugs, getSeasons } from "@/lib/companies";
 import { SHARKS } from "@/lib/sharks";
 
 export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const [slugs, seasons] = await Promise.all([getAllSlugs(), getSeasons()]);
   return [
     { url: site, changeFrequency: "daily", priority: 1 },

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SITE_URL } from "@/lib/site";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getCompany, getUpdates, getRelatedCompanies, STATUS_LABEL, longDate, money } from "@/lib/companies";
@@ -73,7 +74,7 @@ export default async function CompanyPage({ params }: Props) {
   const c = await getCompany(slug);
   if (!c) notFound();
   const [updates, related] = await Promise.all([getUpdates(c.id), getRelatedCompanies(c)]);
-  const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const site = SITE_URL;
   const faq = buildFaq(c, updates);
 
   const jsonLd = {
