@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCompany, getUpdates, STATUS_LABEL, longDate, money } from "@/lib/companies";
+import { getCompany, getUpdates, getRelatedCompanies, STATUS_LABEL, longDate, money } from "@/lib/companies";
+import { CompanyGrid } from "@/app/company-grid";
+import { sharkSlug } from "@/lib/sharks";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +36,45 @@ function answerParagraph(c: NonNullable<Awaited<ReturnType<typeof getCompany>>>)
   return aired + deal + now;
 }
 
+type C = NonNullable<Awaited<ReturnType<typeof getCompany>>>;
+
+// The questions people actually google, answered from the data. Shown on the page AND emitted as FAQPage JSON-LD.
+function buildFaq(c: C, updates: Awaited<ReturnType<typeof getUpdates>>) {
+  const sharks = c.deal_sharks?.join(" and ");
+  const verified = c.last_verified_at ? `, verified ${longDate(c.last_verified_at)}` : "";
+  const latest = updates[0];
+  const faq: { q: string; a: string }[] = [];
+
+  faq.push({
+    q: `Is ${c.name} still in business?`,
+    a: c.current_status === "active" ? `Yes. As of our latest update${verified}, ${c.name} is still operating. ${latest?.summary ?? ""}`.trim()
+     : c.current_status === "acquired" ? `${c.name} was acquired. ${latest?.summary ?? ""}`.trim()
+     : c.current_status === "closed" ? `No. ${c.name} is no longer operating. ${latest?.summary ?? ""}`.trim()
+     : `We haven't verified ${c.name}'s current status yet. This page updates as soon as a sourced update is confirmed.`,
+  });
+  faq.push({
+    q: `Did ${c.name} get a deal on Shark Tank?`,
+    a: c.deal_on_air
+      ? `Yes. On air, ${sharks} agreed to invest ${money(c.deal_amount_usd)} for ${c.deal_equity_pct}% of ${c.name}${c.deal_notes ? ` (${c.deal_notes})` : ""}.` +
+        (c.current_status === "deal_fell_through" ? " The deal later fell through after the show." : c.current_status === "deal_closed" ? " The deal closed after the show." : "")
+      : `No. ${c.name} pitched in season ${c.season}, episode ${c.episode_in_season}, and left without a deal.`,
+  });
+  faq.push({
+    q: `When was ${c.name} on Shark Tank?`,
+    a: `${c.name} appeared in season ${c.season}, episode ${c.episode_in_season}, which first aired on ${longDate(c.air_date)}.`,
+  });
+  if (c.deal_on_air) faq.push({ q: `Which shark invested in ${c.name}?`, a: `${sharks} made the on-air deal with ${c.name}.` });
+  if (c.website_url) faq.push({ q: `Where can I buy ${c.name}?`, a: `${c.name}'s website is ${c.website_url}.` });
+  return faq;
+}
+
 export default async function CompanyPage({ params }: Props) {
   const { slug } = await params;
   const c = await getCompany(slug);
   if (!c) notFound();
-  const updates = await getUpdates(c.id);
+  const [updates, related] = await Promise.all([getUpdates(c.id), getRelatedCompanies(c)]);
   const site = process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  const faq = buildFaq(c, updates);
 
   const jsonLd = {
     "@context": "https://schema.org",
@@ -59,6 +94,18 @@ export default async function CompanyPage({ params }: Props) {
         about: { "@type": "Organization", name: c.name },
         publisher: { "@type": "Organization", name: "Shark Tank Tracker" },
       },
+      {
+        "@type": "FAQPage",
+        mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })),
+      },
+      {
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Shark Tank Tracker", item: site },
+          { "@type": "ListItem", position: 2, name: `Season ${c.season}`, item: `${site}/season/${c.season}` },
+          { "@type": "ListItem", position: 3, name: c.name, item: `${site}/company/${c.slug}` },
+        ],
+      },
     ],
   };
 
@@ -76,7 +123,8 @@ export default async function CompanyPage({ params }: Props) {
         <dt>Pitched</dt><dd>{c.description}</dd>
         <dt>Aired</dt><dd>{longDate(c.air_date)} (S{c.season}E{c.episode_in_season})</dd>
         <dt>On-air deal</dt>
-        <dd>{c.deal_on_air ? `${money(c.deal_amount_usd)} for ${c.deal_equity_pct}% from ${c.deal_sharks?.join(", ")}` : "None"}</dd>
+        <dd>{c.deal_on_air ? <>{money(c.deal_amount_usd)} for {c.deal_equity_pct}% from {c.deal_sharks?.map((n, i) => <span key={n}>{i > 0 && ", "}<Link href={`/shark/${sharkSlug(n)}`}>{n}</Link></span>)}</> : "None"}</dd>
+        <dt>Status</dt><dd><Link href={`/status/${c.current_status}`}>{STATUS_LABEL[c.current_status]}</Link></dd>
         {c.deal_notes && (<><dt>Notes</dt><dd>{c.deal_notes}</dd></>)}
         {c.website_url && (<><dt>Website</dt><dd><a href={c.website_url} rel="nofollow noopener">{c.website_url}</a></dd></>)}
         <dt>Last verified</dt><dd>{c.last_verified_at ? longDate(c.last_verified_at) : "Not yet verified"}</dd>
@@ -97,6 +145,23 @@ export default async function CompanyPage({ params }: Props) {
           {c.deal_on_air ? `Deal with ${c.deal_sharks?.join(" and ")}.` : "No deal."}
         </li>
       </ol>
+
+      <h2>Frequently asked</h2>
+      <div className="faq">
+        {faq.map((f) => (
+          <details key={f.q} open>
+            <summary><h3>{f.q}</h3></summary>
+            <p>{f.a}</p>
+          </details>
+        ))}
+      </div>
+
+      {related.length > 0 && (
+        <>
+          <h2>More from {related.some((r) => r.season === c.season && r.episode_in_season === c.episode_in_season) ? "this episode" : "these sharks"}</h2>
+          <CompanyGrid companies={related} />
+        </>
+      )}
 
       <footer>
         Know something we don&apos;t? <Link href={`/contribute?company=${c.slug}`}>Send an update</Link>

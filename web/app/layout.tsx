@@ -15,6 +15,7 @@ export const metadata: Metadata = {
   title: { default: "Shark Tank Tracker", template: "%s | Shark Tank Tracker" },
   description: "Every company that appeared on Shark Tank, when they aired, and what happened to them after the show.",
   openGraph: { type: "website", siteName: "Shark Tank Tracker" },
+  verification: { google: "3js6at9hDCwycJ4gzpO-81ofNC8lqCQb0su8lAos9xE" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
@@ -39,7 +40,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main>{children}</main>
         <footer className="site">
           <div className="inner">
-            Unofficial fan project. Not affiliated with ABC, Sony Pictures Television, or Shark Tank. Company statuses link to their sources.
+            Unofficial fan project. Not affiliated with ABC, Sony Pictures Television, or Shark Tank. Company statuses link to their sources. <Link href="/about">How we verify</Link>.
           </div>
         </footer>
       </body>

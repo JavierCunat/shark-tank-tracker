@@ -336,3 +336,19 @@ ol.notable li { padding: 14px 16px; background: var(--card); border: 1px solid v
 main > :not(.shark-layer) { position: relative; z-index: 1; }
 @media (prefers-reduced-motion: reduce) { .shark svg, .shark-body, .shark-rear, .shark-tail, .shark-fin, .shark-light { animation: none; } }
 @media (max-width: 600px) { .shark { width: 240px; opacity: 0.45; } }
+
+/* FAQ */
+.faq { display: grid; gap: 8px; }
+.faq details { background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 4px 16px; }
+.faq summary { cursor: pointer; list-style: none; padding: 10px 0; }
+.faq summary::-webkit-details-marker { display: none; }
+.faq summary h3 { display: inline; margin: 0; font-size: 16px; color: var(--fg); font-weight: 600; }
+.faq details p { margin: 0 0 12px; color: var(--fg-2); }
+/* status links */
+.status-links { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; }
+.status-link { display: grid; gap: 2px; padding: 14px 16px; border-radius: 12px; background: var(--card); border: 1px solid var(--line); color: var(--fg-2); font-size: 14px; }
+.status-link .n { font-size: 24px; font-weight: 700; color: var(--fg); letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.status-link:hover { text-decoration: none; border-color: rgba(59, 173, 202, 0.55); }
+.status-link.active .n, .status-link.deal_closed .n { color: var(--ok); }
+.status-link.closed .n, .status-link.deal_fell_through .n { color: var(--bad); }
+.status-link.acquired .n { color: var(--violet); }

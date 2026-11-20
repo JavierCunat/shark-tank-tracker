@@ -119,3 +119,30 @@ export const longDate = (d: string | Date) => {
   const iso = d instanceof Date ? d.toISOString().slice(0, 10) : String(d).slice(0, 10);
   return new Date(iso + "T00:00:00").toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 };
+
+/** Other companies from the same episode, then other deals by the same sharks. */
+export async function getRelatedCompanies(c: CompanyCard, limit = 6) {
+  const sameEpisode = await query<CompanyCard>(
+    `select * from company_cards where season = $1 and episode_in_season = $2 and id <> $3 order by name`,
+    [c.season, c.episode_in_season, c.id],
+  );
+  if (sameEpisode.length >= limit || !c.deal_sharks?.length) return sameEpisode.slice(0, limit);
+  const sameShark = await query<CompanyCard>(
+    `select * from company_cards where deal_on_air and deal_sharks && $1::text[] and id <> $2 and not (season = $3 and episode_in_season = $4)
+      order by random() limit $5`,
+    [c.deal_sharks, c.id, c.season, c.episode_in_season, limit - sameEpisode.length],
+  );
+  return [...sameEpisode, ...sameShark];
+}
+
+export function getCompaniesByStatus(status: CompanyStatus) {
+  return query<CompanyCard>(`select * from company_cards where current_status = $1 order by latest_update_date desc nulls last, season, episode_in_season, name`, [status]);
+}
+
+export function getRecentlyUpdated(limit = 8) {
+  return query<CompanyCard>(`select * from company_cards where latest_update_date is not null order by latest_update_date desc limit $1`, [limit]);
+}
+
+export function getStatusCounts() {
+  return query<{ current_status: CompanyStatus; n: number }>(`select current_status, count(*)::int as n from companies group by current_status`);
+}
