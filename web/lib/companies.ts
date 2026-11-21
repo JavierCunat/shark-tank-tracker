@@ -146,3 +146,37 @@ export function getRecentlyUpdated(limit = 8) {
 export function getStatusCounts() {
   return query<{ current_status: CompanyStatus; n: number }>(`select current_status, count(*)::int as n from companies group by current_status`);
 }
+
+export type SeasonSummary = {
+  season: number; episodes: number; companies: number; first_aired: string; last_aired: string;
+  deals: number; invested: number; active: number; acquired: number; closed: number; unknown: number;
+  top_name: string | null; top_slug: string | null; top_amount: number | null;
+};
+
+export function getSeasonSummaries() {
+  return query<SeasonSummary>(
+    `with s as (
+       select e.season,
+              count(distinct e.id)::int as episodes,
+              count(c.id)::int as companies,
+              min(e.air_date) as first_aired, max(e.air_date) as last_aired,
+              count(c.id) filter (where c.deal_on_air)::int as deals,
+              coalesce(sum(c.deal_amount_usd) filter (where c.deal_on_air), 0)::int as invested,
+              count(c.id) filter (where c.current_status in ('active','deal_closed'))::int as active,
+              count(c.id) filter (where c.current_status = 'acquired')::int as acquired,
+              count(c.id) filter (where c.current_status in ('closed','deal_fell_through'))::int as closed,
+              count(c.id) filter (where c.current_status = 'unknown')::int as unknown
+         from episodes e left join companies c on c.episode_id = e.id
+        group by e.season
+     ),
+     top as (
+       select distinct on (e.season) e.season, c.name as top_name, c.slug as top_slug, c.deal_amount_usd as top_amount
+         from companies c join episodes e on e.id = c.episode_id
+        where c.deal_on_air
+        order by e.season, (c.current_status in ('acquired','active','deal_closed')) desc, c.deal_amount_usd desc nulls last
+     )
+     select s.*, top.top_name, top.top_slug, top.top_amount
+       from s left join top on top.season = s.season
+      order by s.season`,
+  );
+}
