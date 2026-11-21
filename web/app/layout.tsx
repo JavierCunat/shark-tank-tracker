@@ -30,7 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <span className="brand-sub">Tracker</span>
             </Link>
             <nav>
-              <Link href="/season/1">Seasons</Link>
+              <Link href="/seasons">Seasons</Link>
               <Link href="/sharks">Sharks</Link>
               <Link href="/contribute">Contribute</Link>
             </nav>

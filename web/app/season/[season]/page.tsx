@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCompaniesBySeason, longDate } from "@/lib/companies";
+import { getCompaniesBySeason, getSeasons, longDate } from "@/lib/companies";
 import { CompanyGrid } from "@/app/company-grid";
 
 export const dynamic = "force-dynamic";
@@ -19,8 +20,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SeasonPage({ params }: Props) {
   const seasonNum = Number((await params).season);
   if (!Number.isInteger(seasonNum)) notFound();
-  const companies = await getCompaniesBySeason(seasonNum);
+  const [companies, seasons] = await Promise.all([getCompaniesBySeason(seasonNum), getSeasons()]);
   if (companies.length === 0) notFound();
+  const nums = seasons.map((s) => s.season);
+  const prev = nums.filter((n) => n < seasonNum).pop();
+  const next = nums.find((n) => n > seasonNum);
 
   const first = companies[0].air_date;
   const last = companies[companies.length - 1].air_date;
@@ -32,7 +36,7 @@ export default async function SeasonPage({ params }: Props) {
   return (
     <>
       <section className="hero">
-        <p className="eyebrow">Season {seasonNum}</p>
+        <p className="eyebrow"><Link href="/seasons">All seasons</Link> · Season {seasonNum}</p>
         <h1>Every company and where they are now</h1>
         <p className="lede">
           {companies.length} businesses across {byEpisode.size} episodes, {longDate(first)} to {longDate(last)}.
@@ -44,6 +48,11 @@ export default async function SeasonPage({ params }: Props) {
           <CompanyGrid companies={list} />
         </section>
       ))}
+      <nav className="season-nav" aria-label="Season navigation">
+        {prev ? <Link href={`/season/${prev}`}>← Season {prev}</Link> : <span />}
+        <Link href="/seasons">All seasons</Link>
+        {next ? <Link href={`/season/${next}`}>Season {next} →</Link> : <span />}
+      </nav>
     </>
   );
 }

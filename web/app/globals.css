@@ -352,3 +352,8 @@ main > :not(.shark-layer) { position: relative; z-index: 1; }
 .status-link.active .n, .status-link.deal_closed .n { color: var(--ok); }
 .status-link.closed .n, .status-link.deal_fell_through .n { color: var(--bad); }
 .status-link.acquired .n { color: var(--violet); }
+
+/* seasons index + prev/next */
+.season-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+.season-card .season-num { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+.season-nav { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-top: 40px; padding-top: 18px; border-top: 1px solid var(--line); font-weight: 600; }
