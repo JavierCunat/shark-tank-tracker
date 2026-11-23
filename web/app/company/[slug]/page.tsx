@@ -16,7 +16,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   if (!c) return {};
   const year = c.latest_update_date ? new Date(c.latest_update_date).getFullYear() : new Date().getFullYear();
   const title = `What Happened to ${c.name} After Shark Tank? (${year} Update)`;
-  const description = c.latest_update_summary
+  const description = c.story?.now
+    ?? c.latest_update_summary
     ?? `${c.name} pitched on Shark Tank season ${c.season}, episode ${c.episode_in_season} (${longDate(c.air_date)}). ${c.deal_on_air ? `They got a deal from ${c.deal_sharks?.join(" and ")}.` : "They left without a deal."} Here's what happened next.`;
   return {
     title,
@@ -91,7 +92,7 @@ export default async function CompanyPage({ params }: Props) {
         headline: `What Happened to ${c.name} After Shark Tank?`,
         mainEntityOfPage: `${site}/company/${c.slug}`,
         datePublished: c.air_date,
-        dateModified: c.latest_update_date ?? c.air_date,
+        dateModified: [c.story_updated_at?.slice(0, 10), c.latest_update_date].filter(Boolean).sort().pop() ?? c.air_date,
         about: { "@type": "Organization", name: c.name },
         publisher: { "@type": "Organization", name: "Shark Tank Tracker" },
       },
@@ -119,6 +120,20 @@ export default async function CompanyPage({ params }: Props) {
       <h1>What happened to {c.name} after Shark Tank?</h1>
       <span className={`badge ${c.current_status}`}>{STATUS_LABEL[c.current_status]}</span>
       <p className="lede" style={{ marginTop: 14 }}>{answerParagraph(c)}</p>
+
+      {c.story && (
+        <section className="story">
+          <h2>The story</h2>
+          <h3>The pitch</h3><p>{c.story.pitch}</p>
+          <h3>The deal</h3><p>{c.story.deal}</p>
+          <h3>After the show</h3><p>{c.story.after}</p>
+          <h3>Where they are now</h3><p>{c.story.now}</p>
+          {c.story.sources?.length > 0 && (
+            <p className="story-sources">Sources: {c.story.sources.map((x, i) => <span key={x.url}>{i > 0 && " · "}<a href={x.url} rel="nofollow noopener">{x.name}</a></span>)}</p>
+          )}
+          {c.story_updated_at && <p className="muted story-date">Written {longDate(c.story_updated_at.slice(0, 10))}</p>}
+        </section>
+      )}
 
       <dl className="facts">
         <dt>Pitched</dt><dd>{c.description}</dd>

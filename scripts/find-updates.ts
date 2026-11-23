@@ -7,6 +7,7 @@
 import "dotenv/config";
 import pg from "pg";
 import Anthropic from "@anthropic-ai/sdk";
+import { STORY_SPEC, STORY_RULES, normalizeStory, type Story } from "./story-prompt";
 
 const argv = process.argv.slice(2);
 const arg = (k: string) => (argv.includes(k) ? argv[argv.indexOf(k) + 1] : undefined);
@@ -28,12 +29,13 @@ type Finding = {
   primary_source_name: string | null;
   other_source_urls: string[];
   notes: string | null;          // anything the reviewer should know (name collisions, conflicting reports)
+  story: Story | null;           // only when asked for (company has no story yet)
 };
 
 const db = new pg.Client({ connectionString: process.env.DATABASE_URL });
 const anthropic = new Anthropic();
 
-async function research(c: { name: string; description: string; season: number; episode_in_season: number; air_date: string; deal_on_air: boolean; deal_sharks: string[] | null; deal_amount_usd: number | null; deal_equity_pct: string | null }): Promise<Finding> {
+async function research(c: { name: string; description: string; season: number; episode_in_season: number; air_date: string; deal_on_air: boolean; deal_sharks: string[] | null; deal_amount_usd: number | null; deal_equity_pct: string | null }, wantStory: boolean): Promise<Finding> {
   const deal = c.deal_on_air
     ? `On air they accepted $${c.deal_amount_usd?.toLocaleString()} for ${c.deal_equity_pct}% from ${c.deal_sharks?.join(" and ")}.`
     : "They did not get a deal on air.";
@@ -63,13 +65,14 @@ When done, reply with ONLY a JSON object, no prose before or after:
   "primary_source_url": string or null,   // the single best source
   "primary_source_name": string or null,  // e.g. "Forbes", "company website", "Shark Tank Blog"
   "other_source_urls": string[],
-  "notes": string or null
-}`;
+  "notes": string or null${wantStory ? `,
+  ${STORY_SPEC}` : ""}
+}${wantStory ? "\n\n" + STORY_RULES : ""}`;
 
   const msg = await anthropic.messages.create({
     model: MODEL,
-    max_tokens: 2000,
-    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: 6 } as any],
+    max_tokens: wantStory ? 4000 : 2000,
+    tools: [{ type: "web_search_20250305", name: "web_search", max_uses: wantStory ? 8 : 6 } as any],
     messages: [{ role: "user", content: prompt }],
   });
 
@@ -106,6 +109,7 @@ function normalize(raw: any): Finding {
     primary_source_name: str(raw?.primary_source_name),
     other_source_urls: Array.isArray(raw?.other_source_urls) ? raw.other_source_urls.filter((u: unknown) => typeof u === "string") : [],
     notes: str(raw?.notes) ?? (Array.isArray(raw?.status) ? `model gave several statuses: ${raw.status.join(", ")}` : null),
+    story: normalizeStory(raw?.story),
   };
 }
 
@@ -125,6 +129,7 @@ const where = SLUG
 const params: unknown[] = SLUG ? [LIMIT, SLUG] : [LIMIT, String(RESEARCH_DAYS), String(VERIFIED_DAYS)];
 const { rows: companies } = await db.query<any>(
   `select c.id, c.slug, c.name, c.description, c.deal_on_air, c.deal_sharks, c.deal_amount_usd, c.deal_equity_pct,
+          (c.story is null) as want_story,
           e.season, e.episode_in_season, e.air_date::text
      from companies c join episodes e on e.id = c.episode_id
      ${where}
@@ -139,7 +144,7 @@ for (const c of companies) {
   process.stdout.write(`researching ${c.name} (S${c.season}E${c.episode_in_season})... `);
   let f: Finding;
   try {
-    f = await research(c);
+    f = await research(c, Boolean(c.want_story));
   } catch (e) {
     console.log(`failed: ${(e as Error).message}`);
     continue;
@@ -155,18 +160,18 @@ for (const c of companies) {
     res = await db.query(
     `insert into update_candidates
        (company_id, article_url, article_title, article_date, proposed_status, proposed_summary,
-        confidence, relevance_reason, raw_excerpt, model)
-     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-     on conflict (company_id, article_url) do nothing`,
+        confidence, relevance_reason, raw_excerpt, model, proposed_story)
+     values ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+     on conflict (company_id, article_url) do update set proposed_story = coalesce(update_candidates.proposed_story, excluded.proposed_story)`,
     [c.id, url, f.primary_source_name, f.event_date, f.status, f.summary,
-     f.confidence, f.notes ?? `deal_outcome=${f.deal_outcome}`, (f.other_source_urls ?? []).join("\n"), MODEL],
+     f.confidence, f.notes ?? `deal_outcome=${f.deal_outcome}`, (f.other_source_urls ?? []).join("\n"), MODEL, f.story ? JSON.stringify(f.story) : null],
     );
   } catch (e) {
     console.log(`db insert failed: ${(e as Error).message}`);
     continue;
   }
   queued += res.rowCount ?? 0;
-  console.log(`${f.status} (${Math.round(f.confidence * 100)}%)${res.rowCount ? "" : " [already queued]"}`);
+  console.log(`${f.status} (${Math.round(f.confidence * 100)}%)${f.story ? " +story" : ""}${res.rowCount ? "" : " [already queued]"}`);
 }
 console.log(`\nresearched ${companies.length} companies, queued ${queued} new candidates. Run: npm run review`);
 await db.end();

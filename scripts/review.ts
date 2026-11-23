@@ -32,11 +32,18 @@ for (const [i, r] of rows.entries()) {
   console.log(`─── ${i + 1}/${rows.length} ─────────────────────────────────────────`);
   console.log(`${r.name}  (S${r.season}E${r.episode_in_season}, ${r.deal_on_air ? "deal with " + r.deal_sharks?.join(" & ") : "no deal"})`);
   console.log(`From:       ${r.origin === "community" ? "VISITOR SUBMISSION" + (r.submitter_contact ? ` (${r.submitter_contact})` : "") : `research (${r.model})`}`);
-  console.log(`Proposed:   ${r.proposed_status}  ·  dated ${r.article_date ?? "unknown"}  ·  confidence ${r.confidence == null ? "n/a" : Math.round(r.confidence * 100) + "%"}`);
+  if (r.kind === "story") console.log("Kind:       STORY DRAFT");
+  console.log(`Proposed:   ${r.proposed_status ?? "(no status change)"}  ·  dated ${r.article_date ?? "unknown"}  ·  confidence ${r.confidence == null ? "n/a" : Math.round(r.confidence * 100) + "%"}`);
   console.log(`Summary:    ${r.proposed_summary}`);
   console.log(`Source:     ${r.article_url}${r.article_title ? `  (${r.article_title})` : ""}`);
   if (r.raw_excerpt) console.log(`Also:       ${r.raw_excerpt.split("\n").join("\n            ")}`);
   if (r.relevance_reason) console.log(`Notes:      ${r.relevance_reason}`);
+  if (r.proposed_story) {
+    const st = r.proposed_story;
+    console.log(`\n  STORY DRAFT${r.kind === "story" ? " (story only — no status change)" : ""}`);
+    for (const k of ["pitch", "deal", "after", "now"] as const) console.log(`  ${k.toUpperCase()}: ${st[k]}\n`);
+    console.log(`  sources: ${(st.sources ?? []).map((x: any) => x.url).join("  ")}`);
+  }
 
   const answer = (await rl.question("\n[a]pprove  [e]dit summary then approve  [r]eject  [s]kip  [q]uit > ")).trim().toLowerCase();
 
@@ -46,6 +53,13 @@ for (const [i, r] of rows.entries()) {
     await db.query("update update_candidates set status = 'rejected', reviewed_at = now() where id = $1", [r.id]);
     rejected++; console.log("rejected\n"); continue;
   }
+  if ((answer === "a" || answer === "e") && r.kind === "story") {
+    await db.query("begin");
+    await db.query("update companies set story = $2, story_updated_at = now() where id = $1", [r.company_id, JSON.stringify(r.proposed_story)]);
+    await db.query("update update_candidates set status = 'approved', reviewed_at = now() where id = $1", [r.id]);
+    await db.query("commit");
+    approved++; console.log(`approved → story published for ${r.slug}\n`); continue;
+  }
   if (answer === "a" || answer === "e") {
     let summary = r.proposed_summary;
     let date = r.article_date;
@@ -54,7 +68,7 @@ for (const [i, r] of rows.entries()) {
       const d = (await rl.question(`Date YYYY-MM-DD [${date ?? ""}]: `)).trim(); if (d) date = d;
     }
     if (!date) { date = (await rl.question("No date on this candidate. Date YYYY-MM-DD: ")).trim(); }
-    if (!/^https?:\/\//.test(r.article_url)) {
+    if (r.kind !== "story" && !/^https?:\/\//.test(r.article_url)) {
       console.log("Candidate has no real source URL; rejecting instead (no source, no update)."); 
       await db.query("update update_candidates set status = 'rejected', reviewed_at = now() where id = $1", [r.id]);
       rejected++; console.log(); continue;
@@ -66,9 +80,10 @@ for (const [i, r] of rows.entries()) {
       [r.company_id, date, r.proposed_status, summary, r.article_url, r.article_title],
     );
     await db.query("update companies set last_verified_at = current_date where id = $1", [r.company_id]);
+    if (r.proposed_story) await db.query("update companies set story = $2, story_updated_at = now() where id = $1 and story is null", [r.company_id, JSON.stringify(r.proposed_story)]);
     await db.query("update update_candidates set status = 'approved', reviewed_at = now() where id = $1", [r.id]);
     await db.query("commit");
-    approved++; console.log(`approved → ${r.slug} is now ${r.proposed_status}\n`);
+    approved++; console.log(`approved → ${r.slug} is now ${r.proposed_status}${r.proposed_story ? " (+story)" : ""}\n`);
   }
 }
 rl.close();

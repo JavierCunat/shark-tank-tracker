@@ -21,6 +21,8 @@ export type CompanyCard = {
   latest_update_source: string | null;
 };
 
+export type Story = { pitch: string; deal: string; after: string; now: string; sources: { url: string; name: string }[] };
+
 export type Update = {
   id: string;
   update_date: string;
@@ -80,8 +82,8 @@ export function getCompaniesBySeason(season: number) {
 }
 
 export async function getCompany(slug: string) {
-  const rows = await query<CompanyCard & { deal_notes: string | null; website_url: string | null; last_verified_at: string | null }>(
-    `select cc.*, c.deal_notes, c.website_url, c.last_verified_at
+  const rows = await query<CompanyCard & { deal_notes: string | null; website_url: string | null; last_verified_at: string | null; story: Story | null; story_updated_at: string | null }>(
+    `select cc.*, c.deal_notes, c.website_url, c.last_verified_at, c.story, c.story_updated_at
        from company_cards cc join companies c on c.id = cc.id
       where cc.slug = $1`,
     [slug],

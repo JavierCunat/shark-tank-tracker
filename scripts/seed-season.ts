@@ -64,6 +64,7 @@ type Row = { company: string; description: string; episode_in_season: number; pr
   deal_amount_usd: number | null; deal_equity_pct: number | null; deal_notes: string };
 const rows: Row[] = JSON.parse(out.slice(a, z + 1));
 console.log(`${rows.length} pitches`);
+if (rows.length < 8) { console.error(`Only ${rows.length} pitches extracted; the Wikipedia page layout may differ. Not loading.`); process.exit(1); }
 
 // --- 3. write CSV in the same shape as season1.csv ---
 const slugify = (s: string) => s.toLowerCase().replace(/'/g, "").replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");

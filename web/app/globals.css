@@ -480,3 +480,10 @@ dl.facts { background: transparent; border: 0; border-top: 1px solid var(--line)
 .faq details, ol.notable li, .season-row { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; padding-left: 0; padding-right: 0; }
 h2 { font-size: 13px; font-weight: 600; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-top: 44px; }
 .hero .eyebrow { color: var(--muted); }
+
+/* story */
+.story { margin-top: 8px; }
+.story h3 { font-size: 20px; color: var(--fg); margin: 22px 0 8px; letter-spacing: -0.01em; font-weight: 650; }
+.story p { color: var(--fg-2); font-size: 17px; line-height: 1.65; max-width: 70ch; margin: 0 0 6px; }
+.story-sources { font-size: 14px !important; margin-top: 16px !important; }
+.story-date { font-size: 13px !important; }

@@ -1,0 +1,44 @@
+name: Seed a season
+
+on:
+  workflow_dispatch:
+    inputs:
+      season:
+        description: "Season number to seed (e.g. 4)"
+        required: true
+      research:
+        description: "Also research the new companies right away (number to research, 0 to skip)"
+        default: "0"
+
+permissions:
+  contents: write
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Extract and load season ${{ github.event.inputs.season }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npx tsx scripts/seed-season.ts ${{ github.event.inputs.season }}
+      - name: Commit the CSV back to the repo
+        run: |
+          git config user.name "seed-bot"
+          git config user.email "seed-bot@users.noreply.github.com"
+          git add seed/season${{ github.event.inputs.season }}.csv
+          git diff --cached --quiet || git commit -m "Seed season ${{ github.event.inputs.season }}"
+          git push
+      - name: Research the new companies
+        if: ${{ github.event.inputs.research != '0' }}
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: npx tsx scripts/find-updates.ts --limit ${{ github.event.inputs.research }}
